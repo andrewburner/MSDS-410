@@ -97,3 +97,26 @@ ggplot(model2residuals, aes(x = .fitted, y = .std.resid))+
   geom_point()
 
 # 4. Multiple Linear Regression Models
+model3 <- lm(SalePrice ~ TotalFloorSF + OverallQual, subdat)
+
+# 4a.
+fit3 <- tidy(model3)
+fit.stats3 <- glance(model3)
+
+glue("Model: Y = ", round(fit3$estimate[2], 3), "*", fit3$term[2], " + ", round(fit3$estimate[3], 3), "*", fit3$term[3], " + ", round(fit3$estimate[1], 3))
+
+# 4b.
+glue("R-Squared: ", round(fit.stats3$r.squared, 3))
+
+# 4c.
+summary(model3)
+anova(model3)
+
+# 4d.
+model3residuals <- augment(model3, data = subdat)
+
+ggplot(model3residuals, aes(x = .std.resid))+
+  geom_histogram()
+
+ggplot(model3residuals, aes(x = .fitted, y = .std.resid))+
+  geom_point()
