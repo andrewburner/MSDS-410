@@ -42,7 +42,7 @@ sorted.sale.correlations <- correlate(numeric_non_na) %>%
 fashion(sorted.sale.correlations)
 
 # 1. Simple Linear Regression
-# a.
+# 1a.
 ggplot(subdat, aes(TotalFloorSF, SalePrice))+
   geom_point()+
   geom_smooth(method = lm)
@@ -50,14 +50,50 @@ model1 <- lm(SalePrice ~ TotalFloorSF, subdat)
 fit1 <- tidy(model1)
 fit.stats1 <- glance(model1)
 
-# b.
+# 1b.
 glue("Model: Y = ", round(fit1$estimate[2], 3), "*", fit1$term[2], " + ", round(fit1$estimate[1], 3))
 
-# c.
+# 1c.
 glue("R-Squared: ", round(fit.stats1$r.squared, 3))
 
-# d.
+# 1d.
 summary(model1)
 anova(model1)
 
-# e.
+# 1e.
+model1residuals <- augment(model1, data = subdat)
+
+ggplot(model1residuals, aes(x = .std.resid))+
+  geom_histogram()
+ggplot(model1residuals, aes(x = .fitted, y = .std.resid))+
+  geom_point()
+
+# 2. Simple Linear Regression #2
+# 2a.
+ggplot(subdat, aes(OverallQual, SalePrice))+
+  geom_point()+
+  geom_smooth(method = lm)
+model2 <- lm(SalePrice ~ OverallQual, subdat)
+fit2 <- tidy(model2)
+fit.stats2 <- glance(model2)
+
+# 2b.
+glue("Model: Y = ", round(fit2$estimate[2], 3), "*", fit2$term[2], " + ", round(fit2$estimate[1], 3))
+
+# 2c.
+glue("R-Squared: ", round(fit.stats2$r.squared, 3))
+
+# 2d.
+summary(model2)
+anova(model2)
+
+# 2e.
+model2residuals <- augment(model2, data = subdat)
+
+ggplot(model2residuals, aes(x = .std.resid))+
+  geom_histogram()
+
+ggplot(model2residuals, aes(x = .fitted, y = .std.resid))+
+  geom_point()
+
+# 4. Multiple Linear Regression Models
