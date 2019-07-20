@@ -6,6 +6,7 @@ library(skimr)
 library(corrr)
 library(broom)
 library(glue)
+library(formattable)
 
 mydata <- fread('ames_housing_data.csv')
 
@@ -39,13 +40,17 @@ numeric_non_na <- subdat %>%
 sorted.sale.correlations <- correlate(numeric_non_na) %>%
   focus(SalePrice) %>%
   arrange(desc(SalePrice))
-fashion(sorted.sale.correlations)
+
+fashion(sorted.sale.correlations)[2:38,] %>%
+formattable(col.names = c("Variable", "Correlation to SalePrice"), row.names = FALSE)
 
 # 1. Simple Linear Regression
 # 1a.
 ggplot(subdat, aes(TotalFloorSF, SalePrice))+
-  geom_point()+
-  geom_smooth(method = lm)
+  geom_point(aes())+
+  geom_smooth(method = lm)+
+  scale_y_continuous(labels = dollar_format())
+ggsave("model1.png")
 model1 <- lm(SalePrice ~ TotalFloorSF, subdat)
 fit1 <- tidy(model1)
 fit.stats1 <- glance(model1)
@@ -163,4 +168,19 @@ model1.log <- lm(logSalePrice ~ TotalFloorSF, subdat)
 model3.log <- lm(logSalePrice ~ TotalFloorSF + OverallQual, subdat)
 model4.log <- lm(logSalePrice ~ TotalFloorSF + OverallQual + GarageArea, subdat)
 
+model1.log.stats <- glance(model1.log) %>%
+  select(r.squared, adj.r.squared)
+model3.log.stats <- glance(model3.log) %>%
+  select(r.squared, adj.r.squared)
+model4.log.stats <- glance(model4.log) %>%
+  select(r.squared, adj.r.squared)
+log.names <- tribble(~model, "log model 1", "log model 3", "log model 4")
 
+log.model.stats <- bind_rows(model1.log.stats, model3.log.stats, model4.log.stats)
+log.model.comparison <- bind_cols(log.names, log.model.stats)
+colnames(log.model.comparison) <- c("model", "R-Squared", "Adjusted R-Squared")
+formattable(log.model.comparison, align = c("l", "c", "c"),
+            list('R-Squared' = percent,
+                 'Adjusted R-Squared' = percent))
+
+# 8. Multiple Linear Regression and Influential Points
