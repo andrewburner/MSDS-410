@@ -73,6 +73,7 @@ ggplot(model1residuals, aes(x = .fitted, y = .std.resid))+
 ggplot(subdat, aes(OverallQual, SalePrice))+
   geom_point()+
   geom_smooth(method = lm)
+
 model2 <- lm(SalePrice ~ OverallQual, subdat)
 fit2 <- tidy(model2)
 fit.stats2 <- glance(model2)
@@ -120,3 +121,46 @@ ggplot(model3residuals, aes(x = .std.resid))+
 
 ggplot(model3residuals, aes(x = .fitted, y = .std.resid))+
   geom_point()
+
+ggplot(model3residuals, aes(sample = .std.resid)) +
+  geom_qq()+
+  geom_qq_line()
+
+# 5. Additional Variable
+model4 <- lm(SalePrice ~ TotalFloorSF + OverallQual + GarageArea, subdat)
+
+# 5a.
+fit4 <- tidy(model4)
+fit.stats4 <- glance(model4)
+
+glue("Model: Y = ", round(fit4$estimate[2], 3), "*", fit4$term[2], " + ", round(fit4$estimate[3], 3), "*", fit4$term[3], " + ", round(fit4$estimate[4], 3), "*", fit4$term[4], " + ", round(fit4$estimate[1], 3))
+
+# 5b.
+glue("R-Squared: ", round(fit.stats4$r.squared, 3))
+glue("Model 3 R-Squared: ", round(fit.stats3$r.squared, 3))
+glue("Model 4 R-Squared: ", round(fit.stats4$r.squared, 3))
+glue("Difference: ", round(fit.stats4$r.squared - fit.stats3$r.squared, 3))
+
+# 5c.
+fit4
+anova(model4)
+
+# 5d.
+model4residuals <- augment(model4, data = subdat)
+
+ggplot(model4residuals, aes(x = .std.resid))+
+  geom_histogram()
+
+ggplot(model4residuals, aes(x = .fitted, y = .std.resid)) +
+  geom_point()
+
+ggplot(model4residuals, aes(sample = .std.resid)) +
+  geom_qq()+
+  geom_qq_line()
+
+# 6. Multiple Linear Regression Models on Transformed Response Variable
+model1.log <- lm(logSalePrice ~ TotalFloorSF, subdat)
+model3.log <- lm(logSalePrice ~ TotalFloorSF + OverallQual, subdat)
+model4.log <- lm(logSalePrice ~ TotalFloorSF + OverallQual + GarageArea, subdat)
+
+
