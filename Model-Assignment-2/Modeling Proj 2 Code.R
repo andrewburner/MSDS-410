@@ -7,6 +7,7 @@ library(corrr)
 library(broom)
 library(glue)
 library(formattable)
+library(scales)
 
 mydata <- fread('ames_housing_data.csv')
 
@@ -47,10 +48,14 @@ formattable(col.names = c("Variable", "Correlation to SalePrice"), row.names = F
 # 1. Simple Linear Regression
 # 1a.
 ggplot(subdat, aes(TotalFloorSF, SalePrice))+
-  geom_point(aes())+
-  geom_smooth(method = lm)+
-  scale_y_continuous(labels = dollar_format())
+  geom_point(shape = 21, size = 0.9, color = "#21908CFF")+
+  geom_smooth(method = lm, color = "#440154FF")+
+  scale_y_continuous(labels = dollar_format())+
+  labs(title = "Sale Price by Square Footage")+
+  theme(plot.title = element_text(hjust = 0.5))
+
 ggsave("model1.png")
+
 model1 <- lm(SalePrice ~ TotalFloorSF, subdat)
 fit1 <- tidy(model1)
 fit.stats1 <- glance(model1)
@@ -69,9 +74,19 @@ anova(model1)
 model1residuals <- augment(model1, data = subdat)
 
 ggplot(model1residuals, aes(x = .std.resid))+
-  geom_histogram()
+  geom_histogram(binwidth = 0.2, color = "black", fill = "#21908CFF")+
+  labs(x = "Standardized Residuals", y = "count", title = "Distribution of Model Residuals")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggsave("model1residuals_hist.png")
+
 ggplot(model1residuals, aes(x = .fitted, y = .std.resid))+
-  geom_point()
+  geom_point(shape = 21, size = 0.9, color = "#21908CFF")+
+  labs(x = "Predicted Values", y = "Standardized Residuals", title = "Distribution of Model Residuals by Predicted Value")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  scale_x_continuous(labels = dollar_format())
+
+ggsave("model1residuals_point.png")
 
 # 2. Simple Linear Regression #2
 # 2a.
