@@ -91,8 +91,13 @@ ggsave("model1residuals_point.png")
 # 2. Simple Linear Regression #2
 # 2a.
 ggplot(subdat, aes(OverallQual, SalePrice))+
-  geom_point()+
-  geom_smooth(method = lm)
+  geom_point(shape = 21, size = 0.9, color = "#21908CFF")+
+  geom_smooth(method = lm, color = "#440154FF")+
+  scale_y_continuous(labels = dollar_format())+
+  labs(title = "Sale Price by Overall Quality")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggsave("model2.png")
 
 model2 <- lm(SalePrice ~ OverallQual, subdat)
 fit2 <- tidy(model2)
@@ -112,10 +117,19 @@ anova(model2)
 model2residuals <- augment(model2, data = subdat)
 
 ggplot(model2residuals, aes(x = .std.resid))+
-  geom_histogram()
+  geom_histogram(binwidth = 0.2, color = "black", fill = "#21908CFF")+
+  labs(x = "Standardized Residuals", y = "count", title = "Distribution of Model Residuals")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggsave("model2residuals_hist.png")
 
 ggplot(model2residuals, aes(x = .fitted, y = .std.resid))+
-  geom_point()
+  geom_point(shape = 21, size = 0.9, color = "#21908CFF")+
+  labs(x = "Predicted Values", y = "Standardized Residuals", title = "Distribution of Model Residuals by Predicted Value")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  scale_x_continuous(labels = dollar_format())
+
+ggsave("model2residuals_point.png")
 
 # 4. Multiple Linear Regression Models
 model3 <- lm(SalePrice ~ TotalFloorSF + OverallQual, subdat)
@@ -128,6 +142,7 @@ glue("Model: Y = ", round(fit3$estimate[2], 3), "*", fit3$term[2], " + ", round(
 
 # 4b.
 glue("R-Squared: ", round(fit.stats3$r.squared, 3))
+glue("Difference in R-Squared from Model 1: ", round(fit.stats3$r.squared - fit.stats1$r.squared, 3))
 
 # 4c.
 summary(model3)
@@ -137,14 +152,25 @@ anova(model3)
 model3residuals <- augment(model3, data = subdat)
 
 ggplot(model3residuals, aes(x = .std.resid))+
-  geom_histogram()
+  geom_histogram(binwidth = 0.2, color = "black", fill = "#21908CFF")+
+  labs(x = "Standardized Residuals", y = "count", title = "Distribution of Model Residuals")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggsave("model3residuals_hist.png")
 
 ggplot(model3residuals, aes(x = .fitted, y = .std.resid))+
-  geom_point()
+  geom_point(shape = 21, size = 0.9, color = "#21908CFF")+
+  labs(x = "Predicted Values", y = "Standardized Residuals", title = "Distribution of Model Residuals by Predicted Value")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  scale_x_continuous(labels = dollar_format())
+
+ggsave("model3residuals_point.png")
 
 ggplot(model3residuals, aes(sample = .std.resid)) +
   geom_qq()+
   geom_qq_line()
+
+ggsave("model3residuals_qq.png")
 
 # 5. Additional Variable
 model4 <- lm(SalePrice ~ TotalFloorSF + OverallQual + GarageArea, subdat)
