@@ -8,6 +8,7 @@ library(broom)
 library(glue)
 library(formattable)
 library(scales)
+library(olsrr)
 
 mydata <- fread('ames_housing_data.csv')
 
@@ -188,6 +189,7 @@ glue("Model 4 R-Squared: ", round(fit.stats4$r.squared, 3))
 glue("Difference: ", round(fit.stats4$r.squared - fit.stats3$r.squared, 3))
 
 # 5c.
+summary(model4)
 fit4
 anova(model4)
 
@@ -195,29 +197,48 @@ anova(model4)
 model4residuals <- augment(model4, data = subdat)
 
 ggplot(model4residuals, aes(x = .std.resid))+
-  geom_histogram()
+  geom_histogram(binwidth = 0.2, color = "black", fill = "#21908CFF")+
+  labs(x = "Standardized Residuals", y = "count", title = "Distribution of Model Residuals")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggsave("model4residuals_hist.png")
 
 ggplot(model4residuals, aes(x = .fitted, y = .std.resid)) +
-  geom_point()
+  geom_point(shape = 21, size = 0.9, color = "#21908CFF")+
+  labs(x = "Predicted Values", y = "Standardized Residuals", title = "Distribution of Model Residuals by Predicted Value")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  scale_x_continuous(labels = dollar_format())+
+  geom_smooth(method = loess)
+
+ggsave("model4residuals_point.png")
 
 ggplot(model4residuals, aes(sample = .std.resid)) +
   geom_qq()+
   geom_qq_line()
+
+ggsave("model4residuals_qq.png")
 
 # 6. Multiple Linear Regression Models on Transformed Response Variable
 model1.log <- lm(logSalePrice ~ TotalFloorSF, subdat)
 model3.log <- lm(logSalePrice ~ TotalFloorSF + OverallQual, subdat)
 model4.log <- lm(logSalePrice ~ TotalFloorSF + OverallQual + GarageArea, subdat)
 
+
+model1.stats <- glance(model1) %>%
+  select(r.squared, adj.r.squared)
+model3.stats <- glance(model3) %>%
+  select(r.squared, adj.r.squared)
+model4.stats <- glance(model4) %>%
+  select(r.squared, adj.r.squared)
 model1.log.stats <- glance(model1.log) %>%
   select(r.squared, adj.r.squared)
 model3.log.stats <- glance(model3.log) %>%
   select(r.squared, adj.r.squared)
 model4.log.stats <- glance(model4.log) %>%
   select(r.squared, adj.r.squared)
-log.names <- tribble(~model, "log model 1", "log model 3", "log model 4")
+log.names <- tribble(~model, "model 1", "model 3", "model 4", "log model 1", "log model 3", "log model 4")
 
-log.model.stats <- bind_rows(model1.log.stats, model3.log.stats, model4.log.stats)
+log.model.stats <- bind_rows(model1.stats, model3.stats, model4.stats, model1.log.stats, model3.log.stats, model4.log.stats)
 log.model.comparison <- bind_cols(log.names, log.model.stats)
 colnames(log.model.comparison) <- c("model", "R-Squared", "Adjusted R-Squared")
 formattable(log.model.comparison, align = c("l", "c", "c"),
@@ -225,3 +246,23 @@ formattable(log.model.comparison, align = c("l", "c", "c"),
                  'Adjusted R-Squared' = percent))
 
 # 8. Multiple Linear Regression and Influential Points
+threshold <- 2*sqrt((3+1)/(1942-3-1))
+model4residuals <- model4residuals %>%
+  mutate(DFFITS = dffits(model4))
+
+ggplot(model4residuals) +
+  geom_point(aes(x = 1:nrow(model4residuals), y = DFFITS), color = "#21908CFF")+
+  geom_hline(yintercept = threshold, linetype = "dashed", color = "#440154FF") +
+  geom_hline(yintercept = -threshold, linetype = "dashed", color = "#440154FF")+
+  labs(x = "observation number")
+
+ggsave("model4_dffits.png")
+
+model4.outliers.removed <- model4residuals %>%
+  filter(abs(DFFITS) < threshold)
+
+model4.fit.ddfits <- lm(SalePrice ~ TotalFloorSF + OverallQual + GarageArea, model4.outliers.removed)
+summary(model4.fit.ddfits)
+anova(model4.fit.ddfits)
+
+# 9. Beginning to Think About a Final Model
