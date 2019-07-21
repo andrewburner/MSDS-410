@@ -9,6 +9,7 @@ library(glue)
 library(formattable)
 library(scales)
 library(olsrr)
+library(gridExtra)
 
 mydata <- fread('ames_housing_data.csv')
 
@@ -266,3 +267,45 @@ summary(model4.fit.ddfits)
 anova(model4.fit.ddfits)
 
 # 9. Beginning to Think About a Final Model
+model5 <- lm(SalePrice ~ TotalFloorSF + OverallQual + 
+               GarageArea + HouseAge + TotalBsmtSF + LotArea, subdat)
+summary(model5)
+model5residuals <- augment(model5, data = subdat)
+
+ggplot(model5residuals, aes(x = .std.resid))+
+  geom_histogram(binwidth = 0.2, color = "black", fill = "#21908CFF")+
+  labs(x = "Standardized Residuals", y = "count", title = "Distribution of Model Residuals")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggsave("model5residuals_hist.png")
+
+ggplot(model5residuals, aes(x = .fitted, y = .std.resid)) +
+  geom_point(shape = 21, size = 0.9, color = "#21908CFF")+
+  labs(x = "Predicted Values", y = "Standardized Residuals", title = "Distribution of Model Residuals by Predicted Value")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  scale_x_continuous(labels = dollar_format())+
+  geom_smooth(method = loess)
+
+ggsave("model5residuals_point.png")
+
+qq4 <- ggplot(model4residuals, aes(sample = .std.resid)) +
+  geom_qq()+
+  geom_qq_line()+
+  scale_y_continuous(limits = c(-4, 8))+
+  labs(title = "model 4")
+qq5 <- ggplot(model5residuals, aes(sample = .std.resid)) +
+  geom_qq()+
+  geom_qq_line()+
+  scale_y_continuous(limits = c(-4, 8))+
+  labs(title = "model 5")
+grid.arrange(qq4, qq5, nrow = 1)
+ggsave("qq_comparison.png")
+
+tidy(model5)
+summary(model5)
+anova(model5)
+
+fit5 <- tidy(model5)
+fit.stats5 <- glance(model5)
+
+glue("R-Squared: ", round(fit.stats5$r.squared, 3))
